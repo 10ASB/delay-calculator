@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Delay Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+
+:root{
+  --bg:#0a0e1a;
+  --surface:#111827;
+  --surface2:#1a2235;
+  --border:#1e2d45;
+  --blue:#4f9eff;
+  --green:#22d3a5;
+  --amber:#f5a623;
+  --purple:#a78bfa;
+  --coral:#f87171;
+  --teal:#34d399;
+  --text:#e2e8f0;
+  --muted:#64748b;
+  --font:'Space Grotesk',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+
+body{
+  min-height:100vh;
+  background:var(--bg);
+  font-family:var(--font);
+  color:var(--text);
+  padding:40px 20px;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+}
+
+.stars{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  overflow:hidden;
+  z-index:0;
+}
+.star{
+  position:absolute;
+  width:2px;height:2px;
+  background:#fff;
+  border-radius:50%;
+  animation:twinkle var(--d,3s) ease-in-out infinite;
+  opacity:0;
+}
+@keyframes twinkle{0%,100%{opacity:0;}50%{opacity:var(--op,.6);}}
+
+.wrap{
+  position:relative;
+  z-index:1;
+  width:100%;
+  max-width:960px;
+}
+
+header{
+  text-align:center;
+  margin-bottom:48px;
+}
+
+.eyebrow{
+  display:inline-block;
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--blue);
+  border:1px solid rgba(79,158,255,.3);
+  padding:5px 14px;
+  border-radius:100px;
+  margin-bottom:20px;
+}
+
+h1{
+  font-size:clamp(28px,5vw,52px);
+  font-weight:700;
+  letter-spacing:-.02em;
+  line-height:1.1;
+  background:linear-gradient(120deg,#fff 0%,var(--blue) 50%,var(--green) 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  margin-bottom:12px;
+}
+
+.sub{
+  color:var(--muted);
+  font-size:15px;
+  font-weight:400;
+}
+
+/* network diagram */
+.diagram{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:0;
+  margin-bottom:40px;
+}
+.node{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+}
+.node-circle{
+  width:56px;height:56px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:16px;
+  border:2px solid;
+  position:relative;
+  transition:.3s;
+}
+.node-circle.pulse::after{
+  content:'';
+  position:absolute;
+  inset:-4px;
+  border-radius:50%;
+  border:2px solid;
+  border-color:inherit;
+  animation:ripple 2s ease-out infinite;
+}
+@keyframes ripple{
+  0%{transform:scale(1);opacity:.6;}
+  100%{transform:scale(1.6);opacity:0;}
+}
+.node-a .node-circle{background:rgba(79,158,255,.12);border-color:var(--blue);color:var(--blue);}
+.node-r .node-circle{background:rgba(167,139,250,.12);border-color:var(--purple);color:var(--purple);}
+.node-b .node-circle{background:rgba(34,211,165,.12);border-color:var(--green);color:var(--green);}
+.node-label{font-size:11px;color:var(--muted);font-family:var(--mono);}
+
+.link{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+  padding:0 8px;
+  position:relative;
+}
+.link-line{
+  width:100%;
+  height:2px;
+  background:linear-gradient(90deg,var(--blue),var(--purple));
+  position:relative;
+  overflow:hidden;
+}
+.link-line::after{
+  content:'';
+  position:absolute;
+  top:0;left:-40px;
+  width:40px;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.8),transparent);
+  animation:sweep 2.5s linear infinite;
+}
+.link-line.green-link{background:linear-gradient(90deg,var(--purple),var(--green));}
+.link-line.green-link::after{animation-delay:1.2s;}
+@keyframes sweep{0%{left:-40px;}100%{left:calc(100% + 40px);}}
+.link-stat{font-size:10px;color:var(--muted);font-family:var(--mono);}
+
+/* inputs grid */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:16px;
+  margin-bottom:32px;
+}
+
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:18px 20px;
+  display:flex;
+  align-items:center;
+  gap:16px;
+  transition:.25s;
+  cursor:text;
+}
+.card:hover{
+  border-color:var(--accent,var(--blue));
+  background:var(--surface2);
+  transform:translateY(-2px);
+  box-shadow:0 8px 24px rgba(0,0,0,.3);
+}
+.card-icon{
+  width:42px;height:42px;
+  border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;
+  flex-shrink:0;
+}
+.card-body{flex:1;}
+.card-body label{
+  display:block;
+  font-size:11px;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:4px;
+  font-weight:500;
+}
+.card-body input{
+  width:100%;
+  background:transparent;
+  border:none;
+  outline:none;
+  color:var(--text);
+  font-size:20px;
+  font-weight:600;
+  font-family:var(--mono);
+}
+.card-body input::placeholder{color:var(--muted);}
+
+/* colour variants */
+.c-blue .card-icon{background:rgba(79,158,255,.15);color:var(--blue);}
+.c-blue{--accent:var(--blue);}
+.c-green .card-icon{background:rgba(34,211,165,.15);color:var(--green);}
+.c-green{--accent:var(--green);}
+.c-amber .card-icon{background:rgba(245,166,35,.15);color:var(--amber);}
+.c-amber{--accent:var(--amber);}
+.c-purple .card-icon{background:rgba(167,139,250,.15);color:var(--purple);}
+.c-purple{--accent:var(--purple);}
+.c-teal .card-icon{background:rgba(52,211,153,.15);color:var(--teal);}
+.c-teal{--accent:var(--teal);}
+.c-coral .card-icon{background:rgba(248,113,113,.15);color:var(--coral);}
+.c-coral{--accent:var(--coral);}
+
+/* breakdown */
+.breakdown{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:20px;
+  overflow:hidden;
+  margin-bottom:24px;
+}
+.breakdown-header{
+  padding:18px 24px;
+  background:var(--surface2);
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.breakdown-header span{color:var(--blue);font-size:18px;}
+#steps{padding:20px 24px;}
+
+.row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:12px 16px;
+  margin-bottom:10px;
+  border-radius:12px;
+  font-size:14px;
+  animation:slideIn .35s ease both;
+}
+@keyframes slideIn{from{opacity:0;transform:translateX(-16px);}to{opacity:1;transform:translateX(0);}}
+.row-label{display:flex;align-items:center;gap:8px;}
+.row-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.row-val{font-family:var(--mono);font-weight:600;font-size:13px;}
+
+/* result */
+#result{
+  position:relative;
+  padding:28px 32px;
+  border-radius:20px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:24px;
+  overflow:hidden;
+}
+#result::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(120deg,rgba(79,158,255,.06),rgba(167,139,250,.06),rgba(34,211,165,.06));
+  pointer-events:none;
+}
+#result::after{
+  content:'';
+  position:absolute;
+  top:-60px;right:-60px;
+  width:200px;height:200px;
+  background:radial-gradient(circle,rgba(79,158,255,.12),transparent 70%);
+  pointer-events:none;
+}
+.result-label{
+  font-size:12px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:6px;
+}
+#total{
+  font-size:clamp(32px,6vw,56px);
+  font-weight:700;
+  font-family:var(--mono);
+  background:linear-gradient(90deg,var(--blue),var(--purple),var(--green));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.result-badges{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  align-items:flex-end;
+}
+.badge{
+  font-size:12px;
+  font-family:var(--mono);
+  padding:4px 10px;
+  border-radius:100px;
+  border:1px solid;
+}
+.badge.b-blue{border-color:rgba(79,158,255,.4);color:var(--blue);background:rgba(79,158,255,.08);}
+.badge.b-amber{border-color:rgba(245,166,35,.4);color:var(--amber);background:rgba(245,166,35,.08);}
+.badge.b-purple{border-color:rgba(167,139,250,.4);color:var(--purple);background:rgba(167,139,250,.08);}
+
+/* bars */
+.bars-section{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:24px;
+  margin-bottom:24px;
+}
+.bar-row{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-bottom:16px;
+}
+.bar-row:last-child{margin-bottom:0;}
+.bar-name{
+  font-size:12px;
+  color:var(--muted);
+  width:110px;
+  flex-shrink:0;
+  font-weight:500;
+}
+.bar-track{
+  flex:1;
+  height:8px;
+  background:rgba(255,255,255,.05);
+  border-radius:100px;
+  overflow:hidden;
+}
+.bar-fill{
+  height:100%;
+  width:0;
+  border-radius:100px;
+  transition:width 1s cubic-bezier(.4,0,.2,1);
+}
+#tbar{background:linear-gradient(90deg,var(--blue),#7ec8ff);}
+#pbar{background:linear-gradient(90deg,var(--amber),#fcd97a);}
+#prbar{background:linear-gradient(90deg,var(--purple),#c4b5fd);}
+.bar-pct{
+  font-size:12px;
+  font-family:var(--mono);
+  color:var(--muted);
+  width:38px;
+  text-align:right;
+  flex-shrink:0;
+}
+
+/* formula */
+.formula{
+  background:#0d1117;
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:22px 26px;
+}
+.formula-label{
+  font-size:11px;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:12px;
+}
+.formula-line{
+  font-family:var(--mono);
+  font-size:14px;
+  line-height:1.9;
+}
+.kw{color:var(--purple);}
+.fn{color:var(--blue);}
+.op{color:var(--coral);}
+.val{color:var(--amber);}
+.cm{color:#3d4f66;}
+
+@media(max-width:600px){
+  #result{flex-direction:column;gap:16px;align-items:flex-start;}
+  .result-badges{align-items:flex-start;}
+  .diagram{display:none;}
+}
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Network Layer · QoS Analysis</div>
+    <h1>End-to-End Delay<br>Calculator</h1>
+    <p class="sub">Compute latency across any A → Router → B path</p>
+  </header>
+
+  <!-- Live network diagram -->
+  <div class="diagram">
+    <div class="node node-a">
+      <div class="node-circle pulse">A</div>
+      <span class="node-label">source</span>
+    </div>
+    <div class="link">
+      <div class="link-line"></div>
+      <span class="link-stat" id="link1stat">Link 1</span>
+    </div>
+    <div class="node node-r">
+      <div class="node-circle">R</div>
+      <span class="node-label">router</span>
+    </div>
+    <div class="link">
+      <div class="link-line green-link"></div>
+      <span class="link-stat" id="link2stat">Link 2</span>
+    </div>
+    <div class="node node-b">
+      <div class="node-circle pulse">B</div>
+      <span class="node-label">destination</span>
+    </div>
+  </div>
+
+  <!-- Inputs -->
+  <div class="grid">
+    <div class="card c-blue">
+      <div class="card-icon">📦</div>
+      <div class="card-body">
+        <label>Packet size (bits)</label>
+        <input type="number" id="L" value="8000">
+      </div>
+    </div>
+    <div class="card c-green">
+      <div class="card-icon">📶</div>
+      <div class="card-body">
+        <label>Bandwidth (bps)</label>
+        <input type="number" id="R" value="10000000">
+      </div>
+    </div>
+    <div class="card c-amber">
+      <div class="card-icon">🌍</div>
+      <div class="card-body">
+        <label>Prop. delay / link (ms)</label>
+        <input type="number" id="prop" value="5" step="0.1">
+      </div>
+    </div>
+    <div class="card c-purple">
+      <div class="card-icon">⚙️</div>
+      <div class="card-body">
+        <label>Proc. delay / router (ms)</label>
+        <input type="number" id="proc" value="1" step="0.1">
+      </div>
+    </div>
+    <div class="card c-teal">
+      <div class="card-icon">🔗</div>
+      <div class="card-body">
+        <label>Number of links</label>
+        <input type="number" id="links" value="2" min="1">
+      </div>
+    </div>
+    <div class="card c-coral">
+      <div class="card-icon">🖧</div>
+      <div class="card-body">
+        <label>Number of routers</label>
+        <input type="number" id="routers" value="1" min="0">
+      </div>
+    </div>
+  </div>
+
+  <!-- Breakdown -->
+  <div class="breakdown">
+    <div class="breakdown-header">
+      <span>◈</span> Step-by-step breakdown
+    </div>
+    <div id="steps"></div>
+  </div>
+
+  <!-- Result -->
+  <div id="result">
+    <div>
+      <div class="result-label">Total end-to-end delay</div>
+      <div id="total">0 ms</div>
+    </div>
+    <div class="result-badges">
+      <div class="badge b-blue" id="b-trans">Trans: 0 ms</div>
+      <div class="badge b-amber" id="b-prop">Prop: 0 ms</div>
+      <div class="badge b-purple" id="b-proc">Proc: 0 ms</div>
+    </div>
+  </div>
+
+  <!-- Bars -->
+  <div class="bars-section">
+    <div class="bar-row">
+      <span class="bar-name">Transmission</span>
+      <div class="bar-track"><div class="bar-fill" id="tbar"></div></div>
+      <span class="bar-pct" id="tpct">0%</span>
+    </div>
+    <div class="bar-row">
+      <span class="bar-name">Propagation</span>
+      <div class="bar-track"><div class="bar-fill" id="pbar"></div></div>
+      <span class="bar-pct" id="ppct">0%</span>
+    </div>
+    <div class="bar-row">
+      <span class="bar-name">Processing</span>
+      <div class="bar-track"><div class="bar-fill" id="prbar"></div></div>
+      <span class="bar-pct" id="prpct">0%</span>
+    </div>
+  </div>
+
+  <!-- Formula -->
+  <div class="formula">
+    <div class="formula-label">Formula</div>
+    <div class="formula-line">
+      <span class="kw">Total</span> <span class="op">=</span>
+      <span class="cm">/* transmission */</span><br>
+      &nbsp;&nbsp;<span class="fn">links</span> <span class="op">×</span> <span class="val">( L / R )</span>
+      <span class="op">+</span><br>
+      &nbsp;&nbsp;<span class="cm">/* propagation */</span><br>
+      &nbsp;&nbsp;<span class="fn">links</span> <span class="op">×</span> <span class="val">prop_delay</span>
+      <span class="op">+</span><br>
+      &nbsp;&nbsp;<span class="cm">/* processing */</span><br>
+      &nbsp;&nbsp;<span class="fn">routers</span> <span class="op">×</span> <span class="val">proc_delay</span>
+    </div>
+  </div>
+</div>
+
+<script>
+/* stars */
+const starsEl=document.getElementById('stars');
+for(let i=0;i<120;i++){
+  const s=document.createElement('div');
+  s.className='star';
+  s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${2+Math.random()*4}s;--op:${0.2+Math.random()*0.7};animation-delay:${Math.random()*4}s;width:${Math.random()<.2?3:2}px;height:${Math.random()<.2?3:2}px;`;
+  starsEl.appendChild(s);
+}
+
+document.querySelectorAll('input').forEach(el=>el.addEventListener('input',calc));
+
+function row(icon,label,val,bg,dot){
+  return `<div class="row" style="background:${bg}">
+    <div class="row-label"><div class="row-dot" style="background:${dot}"></div>${icon} ${label}</div>
+    <span class="row-val" style="color:${dot}">${val}</span>
+  </div>`;
+}
+
+function calc(){
+  const L=parseFloat(document.getElementById('L').value)||0;
+  const R=parseFloat(document.getElementById('R').value)||1;
+  const prop=parseFloat(document.getElementById('prop').value)||0;
+  const proc=parseFloat(document.getElementById('proc').value)||0;
+  const links=parseInt(document.getElementById('links').value)||1;
+  const routers=parseInt(document.getElementById('routers').value)||0;
+
+  const transEach=(L/R)*1000;
+  const transTotal=transEach*links;
+  const propTotal=prop*links;
+  const procTotal=proc*routers;
+  const total=transTotal+propTotal+procTotal;
+  const sum=total||1;
+
+  document.getElementById('steps').innerHTML=
+    row('🚀','Trans. per link &nbsp;<code style="font-size:11px;opacity:.6">'+L+'/'+R+' ×1000</code>',transEach.toFixed(4)+' ms','rgba(79,158,255,.08)','#4f9eff')+
+    row('🚀','Total transmission &nbsp;<code style="font-size:11px;opacity:.6">'+links+' links</code>',transTotal.toFixed(4)+' ms','rgba(79,158,255,.06)','#4f9eff')+
+    row('🌍','Total propagation &nbsp;<code style="font-size:11px;opacity:.6">'+links+' × '+prop+'ms</code>',propTotal.toFixed(4)+' ms','rgba(245,166,35,.08)','#f5a623')+
+    row('⚙️','Total processing &nbsp;<code style="font-size:11px;opacity:.6">'+routers+' × '+proc+'ms</code>',procTotal.toFixed(4)+' ms','rgba(167,139,250,.08)','#a78bfa');
+
+  document.getElementById('total').textContent=total.toFixed(2)+' ms';
+  document.getElementById('b-trans').textContent='Trans: '+transTotal.toFixed(2)+' ms';
+  document.getElementById('b-prop').textContent='Prop: '+propTotal.toFixed(2)+' ms';
+  document.getElementById('b-proc').textContent='Proc: '+procTotal.toFixed(2)+' ms';
+
+  const tp=(transTotal/sum*100).toFixed(1);
+  const pp=(propTotal/sum*100).toFixed(1);
+  const prp=(procTotal/sum*100).toFixed(1);
+  document.getElementById('tbar').style.width=tp+'%';
+  document.getElementById('pbar').style.width=pp+'%';
+  document.getElementById('prbar').style.width=prp+'%';
+  document.getElementById('tpct').textContent=tp+'%';
+  document.getElementById('ppct').textContent=pp+'%';
+  document.getElementById('prpct').textContent=prp+'%';
+
+  document.getElementById('link1stat').textContent=transEach.toFixed(2)+'+'+prop+'ms';
+  document.getElementById('link2stat').textContent=transEach.toFixed(2)+'+'+prop+'ms';
+}
+calc();
+</script>
+</body>
+</html>
