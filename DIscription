@@ -1,0 +1,51 @@
+# 🌐 End-to-End Delay Calculator
+
+A modern web-based networking tool that calculates End-to-End Delay across a network path using transmission, propagation, and processing delays. Designed for students, educators, and networking enthusiasts to visualize and understand QoS concepts interactively.
+
+## ✨ Features
+
+- 📦 Packet Size Configuration
+- 📡 Bandwidth-Based Transmission Delay Calculation
+- 🌍 Propagation Delay Analysis
+- 🔀 Multi-Link & Router Support
+- 📊 Delay Contribution Visualization
+- 📝 Step-by-Step Breakdown
+- ⚡ Real-Time Calculations
+- 🎨 Modern Responsive UI
+
+---
+
+## 📸 Application Preview
+
+The screenshot below demonstrates the End-to-End Delay Calculator in action. Users can configure packet size, bandwidth, propagation delay, number of links, 
+and routers to compute total network latency. The application provides a detailed breakdown of transmission, propagation, and processing delays, a
+long with visual performance metrics and formula explanations.
+
+
+---
+
+## 🧮 Formula Used
+
+```text
+Total Delay =
+(Links × Packet Size / Bandwidth)
++ (Links × Propagation Delay)
++ (Routers × Processing Delay)
+```
+
+---
+
+## 🚀 Live Demo
+
+https://delayclac.netlify.app
+
+---
+
+## 🎯 Use Cases
+
+- Computer Networks Laboratory
+- QoS Analysis
+- Academic Demonstrations
+- Networking Assignments
+- Delay Calculation Practice
+- Engineering Projects
