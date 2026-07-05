@@ -1,0 +1,1 @@
+A modern web-based networking tool that calculates End-to-End Delay across a network path using transmission, propagation, and processing delays. Designed for students, educators, and networking enthusiasts to visualize and understand QoS concepts interactively.
